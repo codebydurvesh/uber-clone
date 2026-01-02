@@ -4,7 +4,7 @@
 
 ### User Registration
 
-**Endpoint:** `POST /user/register`
+**Endpoint:** `POST /users/register`
 
 **Description:** Register a new user account in the system. This endpoint creates a new user with the provided details, hashes the password, and returns an authentication token.
 
@@ -97,7 +97,7 @@ Returned when validation fails.
 
 ### User Login
 
-**Endpoint:** `POST /user/login`
+**Endpoint:** `POST /users/login`
 
 **Description:** Authenticate an existing user and receive an access token. This endpoint validates the user's credentials and returns a JWT token for subsequent authenticated requests.
 
@@ -193,7 +193,7 @@ Returned when email or password is incorrect.
 
 ### Get User Profile
 
-**Endpoint:** `GET /user/profile`
+**Endpoint:** `GET /users/profile`
 
 **Description:** Retrieve the authenticated user's profile information. This is a protected route that requires a valid JWT token.
 
@@ -210,7 +210,7 @@ Returned when email or password is incorrect.
 #### Example Request
 
 ```
-GET /user/profile
+GET /users/profile
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
@@ -270,7 +270,7 @@ Returned when the token is invalid or expired.
 
 ### User Logout
 
-**Endpoint:** `POST /user/logout`
+**Endpoint:** `POST /users/logout`
 
 **Description:** Log out the authenticated user by clearing the authentication cookie. This is a protected route that requires a valid JWT token.
 
@@ -287,7 +287,7 @@ Returned when the token is invalid or expired.
 #### Example Request
 
 ```
-POST /user/logout
+POST /users/logout
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
