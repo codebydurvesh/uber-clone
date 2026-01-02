@@ -40,7 +40,29 @@ const loginUser = async (req, res) => {
   }
   const token = user.generateAuthToken();
 
-  res.status(200).json({ user, token });
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  res.status(200).cookie("token", token, options).json({ user, token });
 };
 
-export { registerUser, loginUser };
+const getUserProfile = async (req, res) => {
+  const user = req.user;
+  res.status(200).json({ user });
+};
+
+const userLogout = async (req, res) => {
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  res
+    .status(200)
+    .clearCookie("token", options)
+    .json({ message: "Logged out successfully" });
+};
+
+export { registerUser, loginUser, getUserProfile, userLogout };

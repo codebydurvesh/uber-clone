@@ -188,3 +188,149 @@ Returned when email or password is incorrect.
 - The same error message is returned for both invalid email and invalid password to prevent user enumeration attacks
 - A JWT token is generated and returned upon successful authentication
 - The password field is excluded from the user object in responses
+
+---
+
+### Get User Profile
+
+**Endpoint:** `GET /user/profile`
+
+**Description:** Retrieve the authenticated user's profile information. This is a protected route that requires a valid JWT token.
+
+---
+
+#### Headers
+
+| Header          | Type   | Required | Description                           |
+| --------------- | ------ | -------- | ------------------------------------- |
+| `Authorization` | String | Yes\*    | Bearer token (e.g., `Bearer <token>`) |
+
+\*Token can also be sent via cookies.
+
+#### Example Request
+
+```
+GET /user/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+---
+
+#### Responses
+
+##### Success Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "user": {
+    "_id": "64a7b8c9d1e2f3a4b5c6d7e8",
+    "fullName": {
+      "firstname": "John",
+      "lastname": "Doe"
+    },
+    "email": "john.doe@example.com",
+    "createdAt": "2026-01-02T10:30:00.000Z",
+    "updatedAt": "2026-01-02T10:30:00.000Z"
+  }
+}
+```
+
+##### Error Responses
+
+**Status Code:** `401 Unauthorized`
+
+Returned when no token is provided.
+
+```json
+{
+  "error": "Access denied. No token provided."
+}
+```
+
+**Status Code:** `401 Unauthorized`
+
+Returned when the token is invalid or expired.
+
+```json
+{
+  "error": "Invalid token."
+}
+```
+
+---
+
+#### Notes
+
+- Token can be provided via `Authorization` header or `token` cookie
+- The password field is excluded from the user object in responses
+
+---
+
+### User Logout
+
+**Endpoint:** `POST /user/logout`
+
+**Description:** Log out the authenticated user by clearing the authentication cookie. This is a protected route that requires a valid JWT token.
+
+---
+
+#### Headers
+
+| Header          | Type   | Required | Description                           |
+| --------------- | ------ | -------- | ------------------------------------- |
+| `Authorization` | String | Yes\*    | Bearer token (e.g., `Bearer <token>`) |
+
+\*Token can also be sent via cookies.
+
+#### Example Request
+
+```
+POST /user/logout
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+---
+
+#### Responses
+
+##### Success Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
+##### Error Responses
+
+**Status Code:** `401 Unauthorized`
+
+Returned when no token is provided.
+
+```json
+{
+  "error": "Access denied. No token provided."
+}
+```
+
+**Status Code:** `401 Unauthorized`
+
+Returned when the token is invalid or expired.
+
+```json
+{
+  "error": "Invalid token."
+}
+```
+
+---
+
+#### Notes
+
+- Clears the `token` cookie with `httpOnly` and `secure` flags
+- Token can be provided via `Authorization` header or `token` cookie
+- Client should also remove the token from local storage if stored there
