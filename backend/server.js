@@ -1,9 +1,16 @@
 import http from "http";
 import { app } from "./app.js";
+import { connectToDb } from "./db/db.js";
 
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 
-server.listen(port, () => {
-  console.log(`\nServer is running on port ${port}`);
-});
+connectToDb()
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Failed to connect to the database:", error);
+  });
