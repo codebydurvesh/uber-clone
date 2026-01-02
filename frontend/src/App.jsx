@@ -9,6 +9,9 @@ import UserSignup from "./pages/UserSignup.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import UserProtectWrapper from "./pages/UserProtectWrapper.jsx";
 import UserLogout from "./pages/UserLogout.jsx";
+import CaptainHome from "./pages/CaptainHome.jsx";
+import CaptainProtectWrapper from "./pages/CaptainProtectWrapper.jsx";
+import CaptainLogout from "./pages/CaptainLogout.jsx";
 
 function App() {
   return (
@@ -34,6 +37,22 @@ function App() {
             <UserProtectWrapper>
               <UserLogout />
             </UserProtectWrapper>
+          }
+        ></Route>
+        <Route
+          path="/captain-home"
+          element={
+            <CaptainProtectWrapper>
+              <CaptainHome />
+            </CaptainProtectWrapper>
+          }
+        ></Route>
+        <Route
+          path="/captain/logout"
+          element={
+            <CaptainProtectWrapper>
+              <CaptainLogout />
+            </CaptainProtectWrapper>
           }
         ></Route>
       </Routes>

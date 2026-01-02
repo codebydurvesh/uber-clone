@@ -14,9 +14,13 @@ router.post(
   "/register",
   [
     body("email").isEmail().withMessage("Invalid email address"),
-    body("fullName")
+    body("fullName.firstname")
       .isLength({ min: 3 })
-      .withMessage("Full name must be at least 3 characters long"),
+      .withMessage("First name must be at least 3 characters long"),
+    body("fullName.lastname")
+      .optional()
+      .isLength({ min: 3 })
+      .withMessage("Last name must be at least 3 characters long"),
     body("password")
       .isLength({ min: 6 })
       .withMessage("Password must be at least 6 characters long"),
@@ -47,7 +51,7 @@ router.post(
   loginCaptain
 );
 
-router.post("/logout", VerifyJWT, logoutCaptain);
+router.get("/logout", VerifyJWT, logoutCaptain);
 router.get("/profile", VerifyJWT, captainProfile);
 
 export { router };

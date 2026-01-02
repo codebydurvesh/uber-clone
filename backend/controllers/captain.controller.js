@@ -33,7 +33,7 @@ const registerCaptain = async (req, res) => {
   res
     .status(201)
     .cookie("token", token, { httpOnly: true, secure: true })
-    .json(captain);
+    .json({ captain, token });
 };
 
 const loginCaptain = async (req, res) => {
@@ -55,7 +55,7 @@ const loginCaptain = async (req, res) => {
     httpOnly: true,
     secure: true,
   };
-  res.status(200).cookie("token", token, options).json({ captain });
+  res.status(200).cookie("token", token, options).json({ captain, token });
 };
 
 const logoutCaptain = async (req, res) => {
