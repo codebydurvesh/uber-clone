@@ -37,6 +37,6 @@ router.post(
 
 router.get("/profile", VerifyJWT, getUserProfile);
 
-router.post("/logout", VerifyJWT, userLogout);
+router.get("/logout", VerifyJWT, userLogout);
 
 export { router };
