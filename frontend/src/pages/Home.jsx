@@ -4,6 +4,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import "remixicon/fonts/remixicon.css";
 import LocationSearchPanel from "../components/LocationSearchPanel.jsx";
+import ConfirmRide from "../components/ConfirmRide.jsx";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ const Home = () => {
   const panelCloseRef = useRef(null);
   const [vehiclePanel, setVehiclePanel] = useState(false);
   const vehiclePanelRef = useRef(null);
+  const [confirmRidePanel, setConfirmRidePanel] = useState(false);
+  const confirmRidePanelRef = useRef(null);
 
   const submitHandler = (e) => {
     e.preventDefault();
@@ -52,6 +55,17 @@ const Home = () => {
     }
   }, [vehiclePanel]);
 
+  useGSAP(() => {
+    if (confirmRidePanel) {
+      gsap.to(confirmRidePanelRef.current, {
+        transform: "translateY(0)",
+      });
+    } else {
+      gsap.to(confirmRidePanelRef.current, {
+        transform: "translateY(100%)",
+      });
+    }
+  }, [confirmRidePanel]);
   return (
     <div className="relative h-screen overflow-hidden">
       <img
@@ -77,7 +91,7 @@ const Home = () => {
             }}
             className="absolute right-6 top-6 text-2xl opacity-0"
           >
-            <i class="ri-arrow-down-s-fill"></i>
+            <i className="ri-arrow-down-s-fill"></i>
           </h5>
           <h4 className="text-3xl font-semibold">Find a trip</h4>
           <form
@@ -125,9 +139,14 @@ const Home = () => {
           onClick={() => setVehiclePanel(false)}
           className="absolute right-6 top-6 text-2xl opacity-100"
         >
-          <i class="ri-arrow-down-s-fill"></i>
+          <i className="ri-arrow-down-s-fill"></i>
         </h5>
-        <div className="p-3 mb-2 active:border-2  bg-gray-100 rounded-xl w-full flex items-center justify-between">
+        <div
+          onClick={() => {
+            setConfirmRidePanel(true);
+          }}
+          className="p-3 mb-2 active:border-2  bg-gray-100 rounded-xl w-full flex items-center justify-between"
+        >
           <img
             className="h-12"
             src="https://cn-geo1.uber.com/image-proc/crop/resizecrop/udam/format=auto/width=956/height=538/srcb64=aHR0cHM6Ly90Yi1zdGF0aWMudWJlci5jb20vcHJvZC91ZGFtLWFzc2V0cy85MDM0YzIwMC1jZTI5LTQ5ZjEtYmYzNS1lOWQyNTBlODIxN2EucG5n"
@@ -147,7 +166,12 @@ const Home = () => {
           </div>
           <h2 className="text-lg font-semibold">₹193.20</h2>
         </div>
-        <div className="p-3 mb-2 active:border-2 bg-gray-100 rounded-xl w-full flex items-center justify-between">
+        <div
+          onClick={() => {
+            setConfirmRidePanel(true);
+          }}
+          className="p-3 mb-2 active:border-2 bg-gray-100 rounded-xl w-full flex items-center justify-between"
+        >
           <img
             className="h-12"
             src="https://cn-geo1.uber.com/image-proc/crop/resizecrop/udam/format=auto/width=552/height=368/srcb64=aHR0cHM6Ly90Yi1zdGF0aWMudWJlci5jb20vcHJvZC91ZGFtLWFzc2V0cy8yYzdmYTE5NC1jOTU0LTQ5YjItOWM2ZC1hM2I4NjAxMzcwZjUucG5n"
@@ -167,7 +191,12 @@ const Home = () => {
           </div>
           <h2 className="text-lg font-semibold">₹65.17</h2>
         </div>
-        <div className="p-3 mb-2 active:border-2 bg-gray-100 rounded-xl w-full flex items-center justify-between">
+        <div
+          onClick={() => {
+            setConfirmRidePanel(true);
+          }}
+          className="p-3 mb-2 active:border-2 bg-gray-100 rounded-xl w-full flex items-center justify-between"
+        >
           <img
             className="h-12"
             src="https://cn-geo1.uber.com/image-proc/crop/resizecrop/udam/format=auto/width=552/height=368/srcb64=aHR0cHM6Ly90Yi1zdGF0aWMudWJlci5jb20vcHJvZC91ZGFtLWFzc2V0cy8xZGRiOGM1Ni0wMjA0LTRjZTQtODFjZS01NmExMWEwN2ZlOTgucG5n"
@@ -187,6 +216,15 @@ const Home = () => {
           </div>
           <h2 className="text-lg font-semibold">₹118.21</h2>
         </div>
+      </div>
+      <div
+        ref={confirmRidePanelRef}
+        className="fixed w-full z-10 bottom-0 translate-y-full bg-white p-3 py-6 px-3"
+      >
+        <ConfirmRide
+          setConfirmRidePanel={setConfirmRidePanel}
+          setVehiclePanel={setVehiclePanel}
+        />
       </div>
     </div>
   );
