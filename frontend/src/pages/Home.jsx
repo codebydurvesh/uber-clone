@@ -5,18 +5,26 @@ import gsap from "gsap";
 import "remixicon/fonts/remixicon.css";
 import LocationSearchPanel from "../components/LocationSearchPanel.jsx";
 import ConfirmRide from "../components/ConfirmRide.jsx";
+import LookingForDriver from "../components/LookingForDriver.jsx";
+import WaitingForDriver from "../components/WaitingForDriver.jsx";
 
 const Home = () => {
   const navigate = useNavigate();
+
   const [pickup, setPickup] = React.useState("");
   const [destination, setDestination] = useState("");
   const [scroll, setScroll] = useState(false);
+  const [vehiclePanel, setVehiclePanel] = useState(false);
+  const [confirmRidePanel, setConfirmRidePanel] = useState(false);
+  const [vehicleFound, setVehicleFound] = useState(false);
+  const [waitingForDriverPanel, setWaitingForDriverPanel] = useState(false);
+
   const scrollRef = useRef(null); //scroll and panel are the same thing
   const panelCloseRef = useRef(null);
-  const [vehiclePanel, setVehiclePanel] = useState(false);
   const vehiclePanelRef = useRef(null);
-  const [confirmRidePanel, setConfirmRidePanel] = useState(false);
   const confirmRidePanelRef = useRef(null);
+  const vehicleFoundRef = useRef(null);
+  const waitingForDriverPanelRef = useRef(null);
 
   const submitHandler = (e) => {
     e.preventDefault();
@@ -66,6 +74,30 @@ const Home = () => {
       });
     }
   }, [confirmRidePanel]);
+
+  useGSAP(() => {
+    if (vehicleFound) {
+      gsap.to(vehicleFoundRef.current, {
+        transform: "translateY(0)",
+      });
+    } else {
+      gsap.to(vehicleFoundRef.current, {
+        transform: "translateY(100%)",
+      });
+    }
+  }, [vehicleFound]);
+
+  useGSAP(() => {
+    if (waitingForDriverPanel) {
+      gsap.to(waitingForDriverPanelRef.current, {
+        transform: "translateY(0)",
+      });
+    } else {
+      gsap.to(waitingForDriverPanelRef.current, {
+        transform: "translateY(100%)",
+      });
+    }
+  }, [waitingForDriverPanel]);
   return (
     <div className="relative h-screen overflow-hidden">
       <img
@@ -99,7 +131,7 @@ const Home = () => {
               submitHandler(e);
             }}
           >
-            <div className="line absolute h-16 w-1 bg-gray-900 top-[47%] left-10 rounded-full"></div>
+            <div className="line absolute h-16 w-1 bg-gray-900 top-[40%] left-10 rounded-full"></div>
             <input
               onClick={() => setScroll(true)}
               className="bg-[#eee] px-12 py-2 text-base w-full mt-5"
@@ -223,7 +255,22 @@ const Home = () => {
       >
         <ConfirmRide
           setConfirmRidePanel={setConfirmRidePanel}
-          setVehiclePanel={setVehiclePanel}
+          setVehicleFound={setVehicleFound}
+        />
+      </div>
+      <div
+        ref={vehicleFoundRef}
+        className="fixed w-full z-10 bottom-0 translate-y-full bg-white p-3 py-6 px-3"
+      >
+        <LookingForDriver setVehicleFound={setVehicleFound} />
+      </div>
+      <div
+        ref={waitingForDriverPanelRef}
+        className="fixed w-full z-10 bottom-0 translate-y-full bg-white p-3 py-6 px-3"
+      >
+        <WaitingForDriver
+          waitingForDriverPanel={waitingForDriverPanel}
+          setWaitingForDriverPanel={setWaitingForDriverPanel}
         />
       </div>
     </div>

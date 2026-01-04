@@ -1,12 +1,12 @@
 import React from "react";
 import "remixicon/fonts/remixicon.css";
 
-const ConfirmRide = (props) => {
+const LookingForDriver = (props) => {
   return (
     <div>
-      <h3 className="text-2xl font-semibold mb-5">Confirm your Ride</h3>
+      <h3 className="text-2xl font-semibold mb-5">Looking For Driver</h3>
       <h5
-        onClick={() => props.setConfirmRidePanel(false)}
+        onClick={() => props.setVehicleFound(false)}
         className="absolute right-6 top-6 text-2xl opacity-100"
       >
         <i className="ri-arrow-down-s-fill"></i>
@@ -46,19 +46,9 @@ const ConfirmRide = (props) => {
             </div>
           </div>
         </div>
-        <div className="w-full bg-green-400 flex items-center justify-center p-2 rounded-lg text-white font-semibold">
-          <button
-            onClick={() => {
-              props.setVehicleFound(true);
-              props.setConfirmRidePanel(false);
-            }}
-          >
-            Confirm
-          </button>
-        </div>
       </div>
     </div>
   );
 };
 
-export default ConfirmRide;
+export default LookingForDriver;
