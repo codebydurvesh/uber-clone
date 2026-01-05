@@ -1,8 +1,43 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import "remixicon/fonts/remixicon.css";
+import CaptainDetails from "../components/CaptainDetails.jsx";
+import RidePopUp from "../components/RidePopUp.jsx";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
+import ConfirmRidePopUp from "../components/ConfirmRidePopUp.jsx";
 
 const CaptainHome = () => {
+  const [ridePopUpPanel, setRidePopUpPanel] = useState(true);
+  const [confirmRidePopUpPanel, setConfirmRidePopUpPanel] = useState(false);
+
+  const ridePopUpPanelRef = useRef(null);
+  const confirmRidePopUpPanelRef = useRef(null);
+
+  useGSAP(() => {
+    if (ridePopUpPanel) {
+      gsap.to(ridePopUpPanelRef.current, {
+        transform: "translateY(0)",
+      });
+    } else {
+      gsap.to(ridePopUpPanelRef.current, {
+        transform: "translateY(100%)",
+      });
+    }
+  }, [ridePopUpPanel]);
+
+  useGSAP(() => {
+    if (confirmRidePopUpPanel) {
+      gsap.to(confirmRidePopUpPanelRef.current, {
+        transform: "translateY(0)",
+      });
+    } else {
+      gsap.to(confirmRidePopUpPanelRef.current, {
+        transform: "translateY(100%)",
+      });
+    }
+  }, [confirmRidePopUpPanel]);
+
   return (
     <div className="h-screen flex flex-col">
       <Link
@@ -19,39 +54,27 @@ const CaptainHome = () => {
           alt="uber-sample-map"
         />
       </div>
-
       <div className="h-2/5 p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center justify-start gap-3">
-            <img
-              className="h-10 w-10 rounded-full object-cover"
-              src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-              alt="captain-profile-image"
-            />
-            <h4 className="text-lg font-medium">Harsh Patel</h4>
-          </div>
-          <div>
-            <h4 className="text-xl font-semibold">₹295.20</h4>
-            <p className="text-sm text-gray-600">Earned</p>
-          </div>
-        </div>
-        <div className="flex mt-6 p-3 bg-gray-100 rounded-xl justify-center gap-5 items-start">
-          <div className="text-center">
-            <i className="text-3xl mb-2 font-thin ri-timer-2-line"></i>
-            <h5 className="text-lg font-medium">10.2</h5>
-            <p className="text-sm text-gray-600">Hours Online</p>
-          </div>
-          <div className="text-center">
-            <i className="text-3xl mb-2 font-thin ri-speed-up-line"></i>
-            <h5 className="text-lg font-medium">10.2</h5>
-            <p className="text-sm text-gray-600">Hours Online</p>
-          </div>
-          <div className="text-center">
-            <i className="text-3xl mb-2 font-thin ri-booklet-line"></i>
-            <h5 className="text-lg font-medium">10.2</h5>
-            <p className="text-sm text-gray-600">Hours Online</p>
-          </div>
-        </div>
+        <CaptainDetails />
+      </div>
+
+      <div className="fixed w-full z-10 bottom-0 translate-y-full bg-white p-3 py-6 px-3">
+        {/* page */}
+      </div>
+      <div
+        ref={ridePopUpPanelRef}
+        className="fixed w-full z-10 bottom-0 bg-white p-3 py-6 px-3 translate-y-full"
+      >
+        <RidePopUp
+          setRidePopUpPanel={setRidePopUpPanel}
+          setConfirmRidePopUpPanel={setConfirmRidePopUpPanel}
+        />
+      </div>
+      <div
+        ref={confirmRidePopUpPanelRef}
+        className="fixed w-full z-10 bottom-0 bg-white h-screen p-3 py-6 px-3 translate-y-full"
+      >
+        <ConfirmRidePopUp setConfirmRidePopUpPanel={setConfirmRidePopUpPanel} />
       </div>
     </div>
   );

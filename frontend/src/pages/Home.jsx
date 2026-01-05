@@ -131,7 +131,7 @@ const Home = () => {
               submitHandler(e);
             }}
           >
-            <div className="line absolute h-16 w-1 bg-gray-900 top-[40%] left-10 rounded-full"></div>
+            <div className="line absolute h-16 w-1 bg-gray-900 top-[45%] left-10 rounded-full"></div>
             <input
               onClick={() => setScroll(true)}
               className="bg-[#eee] px-12 py-2 text-base w-full mt-5"
