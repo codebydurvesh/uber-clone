@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
@@ -7,24 +7,136 @@ import LocationSearchPanel from "../components/LocationSearchPanel.jsx";
 import ConfirmRide from "../components/ConfirmRide.jsx";
 import LookingForDriver from "../components/LookingForDriver.jsx";
 import WaitingForDriver from "../components/WaitingForDriver.jsx";
+import { useLocationServices } from "../hooks/useLocationServices.js";
+import { UserDataContext } from "../context/UserContext.jsx";
 
 const Home = () => {
   const navigate = useNavigate();
 
-  const [pickup, setPickup] = React.useState("");
+  // Get user context for authentication token
+  const { user } = useContext(UserDataContext);
+
+  // Get token from localStorage (adjust based on your auth implementation)
+  const token = localStorage.getItem("token");
+
+  // Form input states
+  const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
+
+  // Selected location coordinates
+  const [pickupCoords, setPickupCoords] = useState(null);
+  const [destinationCoords, setDestinationCoords] = useState(null);
+
+  // Which field is currently active (for suggestions)
+  const [activeField, setActiveField] = useState(null); // 'pickup' or 'destination'
+
+  // Panel states
   const [scroll, setScroll] = useState(false);
   const [vehiclePanel, setVehiclePanel] = useState(false);
   const [confirmRidePanel, setConfirmRidePanel] = useState(false);
   const [vehicleFound, setVehicleFound] = useState(false);
   const [waitingForDriverPanel, setWaitingForDriverPanel] = useState(false);
 
-  const scrollRef = useRef(null); //scroll and panel are the same thing
+  // Refs for GSAP animations
+  const scrollRef = useRef(null);
   const panelCloseRef = useRef(null);
   const vehiclePanelRef = useRef(null);
   const confirmRidePanelRef = useRef(null);
   const vehicleFoundRef = useRef(null);
   const waitingForDriverPanelRef = useRef(null);
+
+  // Location services hook (with 500ms debounce)
+  const {
+    suggestions,
+    searchLoading,
+    searchError,
+    searchLocations,
+    clearSuggestions,
+    distanceTime,
+    distanceTimeLoading,
+    calculateDistanceTime,
+    clearDistanceTime,
+  } = useLocationServices(500);
+
+  /**
+   * Handle input change for pickup field
+   * Triggers debounced location search
+   */
+  const handlePickupChange = (e) => {
+    const value = e.target.value;
+    setPickup(value);
+    setActiveField("pickup");
+
+    // Clear previous pickup coordinates when user types
+    if (pickupCoords) {
+      setPickupCoords(null);
+      clearDistanceTime();
+    }
+
+    // Search for suggestions
+    if (token) {
+      searchLocations(value, token);
+    }
+  };
+
+  /**
+   * Handle input change for destination field
+   * Triggers debounced location search
+   */
+  const handleDestinationChange = (e) => {
+    const value = e.target.value;
+    setDestination(value);
+    setActiveField("destination");
+
+    // Clear previous destination coordinates when user types
+    if (destinationCoords) {
+      setDestinationCoords(null);
+      clearDistanceTime();
+    }
+
+    // Search for suggestions
+    if (token) {
+      searchLocations(value, token);
+    }
+  };
+
+  /**
+   * Handle location selection from suggestions panel
+   * Stores coordinates and updates the input field
+   */
+  const handleSelectLocation = (locationData) => {
+    const { name, lat, lng, field } = locationData;
+
+    if (field === "pickup") {
+      setPickup(name);
+      setPickupCoords({ lat, lng, name });
+    } else if (field === "destination") {
+      setDestination(name);
+      setDestinationCoords({ lat, lng, name });
+    }
+
+    // Clear suggestions after selection
+    clearSuggestions();
+  };
+
+  /**
+   * Effect: Calculate distance and time when both coordinates are available
+   */
+  useEffect(() => {
+    if (pickupCoords && destinationCoords && token) {
+      calculateDistanceTime(pickupCoords, destinationCoords, token);
+    }
+  }, [pickupCoords, destinationCoords, token, calculateDistanceTime]);
+
+  /**
+   * Effect: Show vehicle panel when distance/time is calculated
+   */
+  useEffect(() => {
+    if (distanceTime && pickupCoords && destinationCoords) {
+      setScroll(false);
+      setVehiclePanel(true);
+    }
+  }, [distanceTime, pickupCoords, destinationCoords]);
 
   const submitHandler = (e) => {
     e.preventDefault();
@@ -133,29 +245,80 @@ const Home = () => {
           >
             <div className="line absolute h-16 w-1 bg-gray-900 top-[45%] left-10 rounded-full"></div>
             <input
-              onClick={() => setScroll(true)}
-              className="bg-[#eee] px-12 py-2 text-base w-full mt-5"
+              onClick={() => {
+                setScroll(true);
+                setActiveField("pickup");
+              }}
+              className="bg-[#eee] px-12 py-2 text-base w-full mt-5 rounded-lg"
               type="text"
               placeholder="Enter your pickup location"
               value={pickup}
-              onChange={(e) => {
-                setPickup(e.target.value);
-              }}
+              onChange={handlePickupChange}
             />
+            {/* Show checkmark if pickup coordinates are set */}
+            {pickupCoords && (
+              <span className="absolute right-8 top-[52%] text-green-500">
+                <i className="ri-checkbox-circle-fill"></i>
+              </span>
+            )}
             <input
-              onClick={() => setScroll(true)}
-              className="bg-[#eee] px-12 py-2 text-base w-full mt-3"
+              onClick={() => {
+                setScroll(true);
+                setActiveField("destination");
+              }}
+              className="bg-[#eee] px-12 py-2 text-base w-full mt-3 rounded-lg"
               type="text"
               placeholder="Enter your destination"
               value={destination}
-              onChange={(e) => {
-                setDestination(e.target.value);
-              }}
+              onChange={handleDestinationChange}
             />
+            {/* Show checkmark if destination coordinates are set */}
+            {destinationCoords && (
+              <span className="absolute right-8 bottom-[15%] text-green-500">
+                <i className="ri-checkbox-circle-fill"></i>
+              </span>
+            )}
           </form>
+
+          {/* Show distance/time info when available */}
+          {distanceTime && (
+            <div className="mt-3 p-2 bg-green-50 rounded-lg flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <i className="ri-route-line text-green-600"></i>
+                <span className="text-sm font-medium">
+                  {distanceTime.distanceText}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <i className="ri-time-line text-green-600"></i>
+                <span className="text-sm font-medium">
+                  {distanceTime.durationText}
+                </span>
+              </div>
+            </div>
+          )}
+          {distanceTimeLoading && (
+            <div className="mt-3 p-2 bg-gray-50 rounded-lg flex items-center justify-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
+              <span className="text-sm text-gray-600">
+                Calculating route...
+              </span>
+            </div>
+          )}
         </div>
         <div ref={scrollRef} className={"bg-white h-0 opacity-0"}>
+          {/* Show error message if search fails */}
+          {searchError && (
+            <div className="p-2 mb-2 bg-red-50 text-red-600 rounded-lg text-sm">
+              <i className="ri-error-warning-line mr-1"></i>
+              {searchError}
+            </div>
+          )}
           <LocationSearchPanel
+            suggestions={suggestions}
+            isLoading={searchLoading}
+            onSelectLocation={handleSelectLocation}
+            activeField={activeField}
             setVehiclePanel={setVehiclePanel}
             setScroll={setScroll}
           />

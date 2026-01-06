@@ -337,6 +337,292 @@ Returned when the token is invalid or expired.
 
 ---
 
+## Maps API (OpenStreetMap-based Services)
+
+These endpoints use OpenStreetMap-based services (Nominatim for geocoding, OpenRouteService for routing) instead of Google Maps API.
+
+### Environment Variables Required
+
+Add the following to your `.env` file:
+
+```env
+OPENROUTESERVICE_API_KEY=your_api_key_here
+```
+
+Get your free API key from: https://openrouteservice.org/dev/#/signup
+
+---
+
+### Get Location Suggestions (Auto-complete)
+
+**Endpoint:** `GET /maps/suggestions`
+
+**Description:** Returns location suggestions based on search query. Uses Nominatim (OSM geocoding service) for auto-complete functionality with debouncing support on the frontend.
+
+**Authentication:** Required (Bearer token)
+
+---
+
+#### Query Parameters
+
+| Parameter | Type   | Required | Description                        |
+| --------- | ------ | -------- | ---------------------------------- |
+| `query`   | String | Yes      | Search text (minimum 2 characters) |
+
+#### Example Request
+
+```
+GET /maps/suggestions?query=bandra station
+Authorization: Bearer <token>
+```
+
+---
+
+#### Responses
+
+##### Success Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "name": "Bandra Railway Station, Bandra West, Mumbai, Maharashtra, 400050, India",
+      "lat": "19.0544137",
+      "lng": "72.8402147",
+      "placeId": 12345678,
+      "type": "station"
+    },
+    {
+      "name": "Bandra Terminus, Mumbai, Maharashtra, India",
+      "lat": "19.0589",
+      "lng": "72.8411",
+      "placeId": 87654321,
+      "type": "station"
+    }
+  ],
+  "count": 2
+}
+```
+
+##### Error Responses
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "success": false,
+  "errors": [
+    {
+      "msg": "Query must be at least 2 characters",
+      "path": "query",
+      "location": "query"
+    }
+  ]
+}
+```
+
+---
+
+### Get Coordinates from Address (Forward Geocoding)
+
+**Endpoint:** `GET /maps/coordinates`
+
+**Description:** Converts an address/location name into latitude and longitude coordinates. Uses Nominatim forward geocoding.
+
+**Authentication:** Required (Bearer token)
+
+---
+
+#### Query Parameters
+
+| Parameter | Type   | Required | Description                                 |
+| --------- | ------ | -------- | ------------------------------------------- |
+| `address` | String | Yes      | Full address or location name (min 3 chars) |
+
+#### Example Request
+
+```
+GET /maps/coordinates?address=Bandra Station, Mumbai
+Authorization: Bearer <token>
+```
+
+---
+
+#### Responses
+
+##### Success Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "name": "Bandra Railway Station, Bandra West, Mumbai, Maharashtra, 400050, India",
+    "lat": "19.0544137",
+    "lng": "72.8402147",
+    "boundingBox": ["19.0534137", "19.0554137", "72.8392147", "72.8412147"]
+  }
+}
+```
+
+##### Error Responses
+
+**Status Code:** `404 Not Found`
+
+```json
+{
+  "success": false,
+  "error": "Location not found"
+}
+```
+
+---
+
+### Calculate Distance & Estimated Time
+
+**Endpoint:** `GET /maps/distance-time`
+
+**Description:** Calculates driving distance and estimated travel time (ETA) between pickup and drop coordinates. Uses OpenRouteService Directions API.
+
+**Authentication:** Required (Bearer token)
+
+---
+
+#### Query Parameters
+
+| Parameter   | Type  | Required | Description                         |
+| ----------- | ----- | -------- | ----------------------------------- |
+| `pickupLat` | Float | Yes      | Pickup latitude (-90 to 90)         |
+| `pickupLng` | Float | Yes      | Pickup longitude (-180 to 180)      |
+| `dropLat`   | Float | Yes      | Destination latitude (-90 to 90)    |
+| `dropLng`   | Float | Yes      | Destination longitude (-180 to 180) |
+
+#### Example Request
+
+```
+GET /maps/distance-time?pickupLat=19.0544&pickupLng=72.8402&dropLat=19.0176&dropLng=72.8562
+Authorization: Bearer <token>
+```
+
+This example calculates the route from Bandra Station to CST Station in Mumbai.
+
+---
+
+#### Responses
+
+##### Success Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "distance": 12.53,
+    "duration": 35,
+    "distanceText": "12.53 km",
+    "durationText": "35 mins",
+    "bounds": [72.8402, 19.0176, 72.8562, 19.0544]
+  }
+}
+```
+
+| Field          | Type   | Description                  |
+| -------------- | ------ | ---------------------------- |
+| `distance`     | Float  | Distance in kilometers       |
+| `duration`     | Int    | Estimated time in minutes    |
+| `distanceText` | String | Formatted distance with unit |
+| `durationText` | String | Formatted duration with unit |
+| `bounds`       | Array  | Bounding box for the route   |
+
+##### Error Responses
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "success": false,
+  "errors": [
+    {
+      "msg": "Invalid pickup latitude",
+      "path": "pickupLat",
+      "location": "query"
+    }
+  ]
+}
+```
+
+**Status Code:** `500 Internal Server Error`
+
+```json
+{
+  "success": false,
+  "error": "OpenRouteService API key is not configured"
+}
+```
+
+---
+
+### Rate Limits & Best Practices
+
+#### Nominatim (OSM Geocoding)
+
+- **Rate limit:** Maximum 1 request per second
+- **Usage policy:** https://operations.osmfoundation.org/policies/nominatim/
+- Implement debouncing on frontend (500ms recommended)
+- Include a valid User-Agent header
+
+#### OpenRouteService
+
+- **Free tier:** 2,000 requests/day
+- **Rate limit:** 40 requests/minute
+- Get API key: https://openrouteservice.org/dev/#/signup
+
+---
+
+### Frontend Integration Example
+
+````javascript
+// Using the useLocationServices hook
+import { useLocationServices } from '../hooks/useLocationServices';
+
+const MyComponent = () => {
+  const {
+    suggestions,
+    searchLoading,
+    searchLocations,
+    calculateDistanceTime,
+    distanceTime
+  } = useLocationServices(500); // 500ms debounce
+
+  // Search as user types
+  const handleInputChange = (e) => {
+    searchLocations(e.target.value, authToken);
+  };
+
+  // Calculate distance when both locations are selected
+  const handleCalculateRoute = () => {
+    calculateDistanceTime(
+      { lat: 19.0544, lng: 72.8402 },
+      { lat: 19.0176, lng: 72.8562 },
+      authToken
+    );
+  };
+
+  return (
+    <div>
+      {distanceTime && (
+        <p>Distance: {distanceTime.distanceText}, ETA: {distanceTime.durationText}</p>
+      )}
+    </div>
+  );
+};
+```---
+
 ## Captain Endpoints
 
 ### Captain Registration
@@ -377,7 +663,7 @@ Returned when the token is invalid or expired.
     "vehicleType": "car"
   }
 }
-```
+````
 
 ---
 
