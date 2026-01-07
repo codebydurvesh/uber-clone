@@ -281,7 +281,7 @@ const Home = () => {
           </form>
 
           {/* Show distance/time info when available */}
-          {distanceTime && (
+          {/* {distanceTime && (
             <div className="mt-3 p-2 bg-green-50 rounded-lg flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <i className="ri-route-line text-green-600"></i>
@@ -296,7 +296,7 @@ const Home = () => {
                 </span>
               </div>
             </div>
-          )}
+          )} */}
           {distanceTimeLoading && (
             <div className="mt-3 p-2 bg-gray-50 rounded-lg flex items-center justify-center">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
@@ -329,6 +329,22 @@ const Home = () => {
         className="fixed w-full z-10 bottom-0 translate-y-full bg-white p-3 py-6 px-3"
       >
         <h3 className="text-2xl font-semibold mb-5">Choose a Vehicle</h3>
+        {distanceTime && (
+          <div className="mt-3 p-2 bg-green-50 rounded-lg flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <i className="ri-route-line text-green-600"></i>
+              <span className="text-sm font-medium">
+                {distanceTime.distanceText}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <i className="ri-time-line text-green-600"></i>
+              <span className="text-sm font-medium">
+                {distanceTime.durationText}
+              </span>
+            </div>
+          </div>
+        )}
         <h5
           ref={vehiclePanelRef}
           onClick={() => setVehiclePanel(false)}

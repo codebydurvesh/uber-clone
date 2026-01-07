@@ -1003,3 +1003,138 @@ Returned when the token is invalid or expired.
 - Clears the `token` cookie with `httpOnly` and `secure` flags
 - Token can be provided via `Authorization` header or `token` cookie
 - Client should also remove the token from local storage if stored there
+
+---
+
+## Rides API
+
+### Create Ride
+
+**Endpoint:** `POST /rides/create`
+
+**Description:** Create a new ride request. This endpoint calculates the fare based on pickup and destination locations, and creates a ride record in the system. Requires user authentication.
+
+---
+
+#### Headers
+
+| Header          | Type   | Required | Description                           |
+| --------------- | ------ | -------- | ------------------------------------- |
+| `Authorization` | String | Yes\*    | Bearer token (e.g., `Bearer <token>`) |
+
+\*Token can also be sent via cookies.
+
+---
+
+#### Request Body
+
+| Field         | Type   | Required | Description                                             |
+| ------------- | ------ | -------- | ------------------------------------------------------- |
+| `pickup`      | String | Yes      | Pickup location name (minimum 3 characters)             |
+| `destination` | String | Yes      | Destination location name (minimum 3 characters)        |
+| `vehicleType` | String | Yes      | Type of vehicle: `car`, `autorickshaw`, or `motorcycle` |
+
+#### Example Request
+
+```json
+{
+  "pickup": "Bandra, Mumbai",
+  "destination": "Panvel, Navi Mumbai",
+  "vehicleType": "car"
+}
+```
+
+---
+
+#### Responses
+
+##### Success Response
+
+**Status Code:** `201 Created`
+
+```json
+{
+  "_id": "64a7b8c9d1e2f3a4b5c6d7e8",
+  "user": "64a7b8c9d1e2f3a4b5c6d7e9",
+  "pickup": "Bandra, Mumbai",
+  "destination": "Panvel, Navi Mumbai",
+  "vehicleType": "car",
+  "fare": 270,
+  "status": "pending",
+  "createdAt": "2026-01-07T10:30:00.000Z",
+  "updatedAt": "2026-01-07T10:30:00.000Z"
+}
+```
+
+##### Error Responses
+
+**Status Code:** `400 Bad Request`
+
+Returned when validation fails.
+
+```json
+{
+  "errors": [
+    {
+      "type": "field",
+      "msg": "Pickup location is required",
+      "path": "pickup",
+      "location": "body"
+    }
+  ]
+}
+```
+
+**Status Code:** `401 Unauthorized`
+
+Returned when no token is provided or token is invalid.
+
+```json
+{
+  "error": "Access denied. No token provided."
+}
+```
+
+**Status Code:** `500 Internal Server Error`
+
+Returned when ride creation fails (e.g., location not found).
+
+```json
+{
+  "error": "Location not found"
+}
+```
+
+---
+
+#### Validation Rules
+
+| Field         | Rule                                                | Error Message                 |
+| ------------- | --------------------------------------------------- | ----------------------------- |
+| `pickup`      | Must be a string, minimum 3 characters              | "Pickup location is required" |
+| `destination` | Must be a string, minimum 3 characters              | "Destination is required"     |
+| `vehicleType` | Must be one of: `car`, `autorickshaw`, `motorcycle` | "Invalid vehicle type"        |
+
+---
+
+#### Fare Calculation
+
+The fare is calculated based on distance and estimated travel time:
+
+| Vehicle Type | Base Fare | Per Km Rate | Per Minute Rate |
+| ------------ | --------- | ----------- | --------------- |
+| Autorickshaw | ₹30       | ₹12         | ₹1              |
+| Car          | ₹50       | ₹18         | ₹2              |
+| Motorcycle   | ₹20       | ₹8          | ₹0.50           |
+
+**Formula:** `Fare = Base Fare + (Per Km Rate × Distance) + (Per Minute Rate × Duration)`
+
+---
+
+#### Notes
+
+- Requires user authentication via JWT token
+- Location names are geocoded to coordinates using Nominatim API
+- Distance and duration are calculated using OpenRouteService API
+- The ride is created with `pending` status by default
+- Token can be provided via `Authorization` header or `token` cookie

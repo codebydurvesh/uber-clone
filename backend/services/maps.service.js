@@ -1,39 +1,14 @@
 import axios from "axios";
 
-/**
- * Maps Service
- * Uses OpenStreetMap-based services (Nominatim & OpenRouteService)
- * for location search, geocoding, and routing
- */
-
-// Nominatim API base URL (OSM geocoding service)
 const NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org";
 
-// OpenRouteService API base URL (for routing/directions)
 const ORS_BASE_URL = "https://api.openrouteservice.org";
 
-/**
- * Feature 1: Get Location Suggestions (Auto-complete)
- * Uses Nominatim search API for address/location suggestions
- *
- * @param {string} query - The search query (partial address or location name)
- * @returns {Promise<Array>} - Array of location suggestions with name, lat, lng
- *
- * Example Response:
- * [
- *   { name: "Mumbai, Maharashtra, India", lat: "19.0759837", lng: "72.8776559" },
- *   { name: "Mumbai Airport, Mumbai, India", lat: "19.0896", lng: "72.8656" }
- * ]
- */
 const getLocationSuggestions = async (query) => {
   try {
-    // Validate input
     if (!query || query.trim().length < 2) {
       return [];
     }
-
-    // Make request to Nominatim search API
-    // Note: Nominatim requires proper headers and has rate limits (1 req/sec)
     const response = await axios.get(`${NOMINATIM_BASE_URL}/search`, {
       params: {
         q: query, // Search query
@@ -82,21 +57,6 @@ const getLocationSuggestions = async (query) => {
   }
 };
 
-/**
- * Feature 2: Get Coordinates from Location Name (Forward Geocoding)
- * Converts an address/location name into latitude and longitude
- *
- * @param {string} address - The full address or location name
- * @returns {Promise<Object>} - Object containing lat, lng, and formatted address
- *
- * Example Request: "Bandra Station, Mumbai"
- * Example Response:
- * {
- *   name: "Bandra Railway Station, Mumbai, Maharashtra, India",
- *   lat: "19.0544",
- *   lng: "72.8402"
- * }
- */
 const getCoordinates = async (address) => {
   try {
     // Validate input
@@ -149,34 +109,14 @@ const getCoordinates = async (address) => {
   }
 };
 
-/**
- * Feature 3: Get Distance and Estimated Time Between Two Points
- * Uses OpenRouteService Directions API for routing calculations
- *
- * @param {Object} pickup - Pickup location { lat, lng }
- * @param {Object} drop - Drop/destination location { lat, lng }
- * @returns {Promise<Object>} - Object containing distance (km) and duration (minutes)
- *
- * Example Request:
- * pickup: { lat: "19.0544", lng: "72.8402" }  // Bandra Station
- * drop: { lat: "19.0176", lng: "72.8562" }    // CST Station
- *
- * Example Response:
- * {
- *   distance: 12.5,      // Distance in kilometers
- *   duration: 35,        // Duration in minutes
- *   distanceText: "12.5 km",
- *   durationText: "35 mins"
- * }
- */
-const getDistanceAndTime = async (pickup, drop) => {
+const getDistanceAndTime = async (pickup, destination) => {
   try {
     // Validate inputs
     if (!pickup || !pickup.lat || !pickup.lng) {
       throw new Error("Valid pickup coordinates are required");
     }
-    if (!drop || !drop.lat || !drop.lng) {
-      throw new Error("Valid drop coordinates are required");
+    if (!destination || !destination.lat || !destination.lng) {
+      throw new Error("Valid destination coordinates are required");
     }
 
     // Get API key from environment variables
@@ -188,7 +128,7 @@ const getDistanceAndTime = async (pickup, drop) => {
     // OpenRouteService expects coordinates as [longitude, latitude]
     const coordinates = [
       [parseFloat(pickup.lng), parseFloat(pickup.lat)],
-      [parseFloat(drop.lng), parseFloat(drop.lat)],
+      [parseFloat(destination.lng), parseFloat(destination.lat)],
     ];
 
     // Make request to OpenRouteService Directions API
@@ -235,10 +175,6 @@ const getDistanceAndTime = async (pickup, drop) => {
   }
 };
 
-/**
- * Alternative: Get Distance and Time using GET request
- * Some developers prefer GET requests for simpler integration
- */
 const getDistanceAndTimeAlt = async (
   pickupLat,
   pickupLng,

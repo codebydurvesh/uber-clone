@@ -6,6 +6,7 @@ import { router as userRoutes } from "./routes/user.route.js";
 import { router as captianRoutes } from "./routes/captain.route.js";
 import { router as mapsRoutes } from "./routes/maps.route.js";
 import cookieParser from "cookie-parser";
+import { router as rideRouter } from "./routes/ride.route.js";
 
 const app = express();
 
@@ -24,5 +25,7 @@ app.use("/captains", captianRoutes);
 
 // Maps routes for location services (OSM + OpenRouteService)
 app.use("/maps", mapsRoutes);
+
+app.use("/rides", rideRouter);
 
 export { app };

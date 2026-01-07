@@ -5,20 +5,6 @@ import {
 } from "../services/maps.service.js";
 import { validationResult, query } from "express-validator";
 
-/**
- * Maps Controller
- * Handles HTTP requests for location services
- */
-
-/**
- * GET /maps/suggestions
- * Get location suggestions based on search query (auto-complete)
- *
- * Query Parameters:
- * - query: The search text (required, min 2 characters)
- *
- * Example: GET /maps/suggestions?query=bandra
- */
 const getSuggestions = async (req, res) => {
   try {
     // Validate request
@@ -49,15 +35,6 @@ const getSuggestions = async (req, res) => {
   }
 };
 
-/**
- * GET /maps/coordinates
- * Get coordinates (lat/lng) for a given address
- *
- * Query Parameters:
- * - address: The full address or location name (required)
- *
- * Example: GET /maps/coordinates?address=Bandra Station, Mumbai
- */
 const getCoordinatesFromAddress = async (req, res) => {
   try {
     // Validate request
@@ -96,18 +73,6 @@ const getCoordinatesFromAddress = async (req, res) => {
   }
 };
 
-/**
- * GET /maps/distance-time
- * Calculate distance and estimated time between two points
- *
- * Query Parameters:
- * - pickupLat: Pickup latitude (required)
- * - pickupLng: Pickup longitude (required)
- * - dropLat: Drop/destination latitude (required)
- * - dropLng: Drop/destination longitude (required)
- *
- * Example: GET /maps/distance-time?pickupLat=19.0544&pickupLng=72.8402&dropLat=19.0176&dropLng=72.8562
- */
 const getDistanceTime = async (req, res) => {
   try {
     // Validate request
