@@ -1012,7 +1012,7 @@ Returned when the token is invalid or expired.
 
 **Endpoint:** `POST /rides/create`
 
-**Description:** Create a new ride request. This endpoint calculates the fare based on pickup and destination locations, and creates a ride record in the system. Requires user authentication.
+**Description:** Create a new ride request. This endpoint calculates the fare based on pickup and destination locations, generates a 6-digit OTP for ride verification, and creates a ride record in the system. Requires user authentication.
 
 ---
 
@@ -1061,10 +1061,24 @@ Returned when the token is invalid or expired.
   "vehicleType": "car",
   "fare": 270,
   "status": "pending",
+  "otp": "482619",
   "createdAt": "2026-01-07T10:30:00.000Z",
   "updatedAt": "2026-01-07T10:30:00.000Z"
 }
 ```
+
+| Field         | Type   | Description                                             |
+| ------------- | ------ | ------------------------------------------------------- |
+| `_id`         | String | Unique identifier for the ride                          |
+| `user`        | String | User ID who created the ride                            |
+| `pickup`      | String | Pickup location name                                    |
+| `destination` | String | Destination location name                               |
+| `vehicleType` | String | Type of vehicle selected                                |
+| `fare`        | Number | Calculated fare in INR                                  |
+| `status`      | String | Current ride status (default: `pending`)                |
+| `otp`         | String | 6-digit OTP for ride verification (shared with captain) |
+| `createdAt`   | String | Timestamp of ride creation                              |
+| `updatedAt`   | String | Timestamp of last update                                |
 
 ##### Error Responses
 
@@ -1138,3 +1152,6 @@ The fare is calculated based on distance and estimated travel time:
 - Distance and duration are calculated using OpenRouteService API
 - The ride is created with `pending` status by default
 - Token can be provided via `Authorization` header or `token` cookie
+- A 6-digit OTP is generated using cryptographically secure random number generation
+- The OTP is required for the captain to start the ride (ride verification)
+- The OTP field is excluded from queries by default (`select: false`) but included in the create response
