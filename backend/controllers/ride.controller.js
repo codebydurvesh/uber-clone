@@ -115,6 +115,8 @@ const startRideController = async (req, res) => {
     ride.startedAt = new Date();
     await ride.save();
 
+    console.log(`Ride ${rideId} started at:`, ride.startedAt);
+
     // Notify user that ride has started
     if (ride.user.socketId) {
       sendMessageToSocketId(ride.user.socketId, {
@@ -155,9 +157,13 @@ const endRideController = async (req, res) => {
       return res.status(403).json({ error: "Unauthorized to end this ride" });
     }
 
+    // Store startedAt before updating (in case it gets lost during save)
+    const rideStartedAt = ride.startedAt;
+    const completionTime = new Date();
+
     // Update ride status to completed and set completion time
     ride.status = "completed";
-    ride.completedAt = new Date();
+    ride.completedAt = completionTime;
     await ride.save();
 
     // Update captain's statistics
@@ -168,11 +174,23 @@ const endRideController = async (req, res) => {
 
     // Calculate actual ride duration in hours
     let rideDurationHours = 0;
-    if (ride.startedAt) {
-      const startTime = new Date(ride.startedAt);
-      const endTime = new Date(ride.completedAt);
-      const durationMs = endTime - startTime;
+    if (rideStartedAt) {
+      const startTime = new Date(rideStartedAt);
+      const durationMs = completionTime - startTime;
       rideDurationHours = durationMs / (1000 * 60 * 60); // Convert ms to hours
+      console.log(
+        `Ride duration: ${rideDurationHours} hours (${durationMs}ms)`
+      );
+    } else {
+      // Fallback: use estimated duration from ride if startedAt is not available
+      // Duration is stored as "X min" format
+      const durationStr = ride.duration || "0";
+      const durationMinutes =
+        parseFloat(durationStr.replace(/[^0-9.]/g, "")) || 0;
+      rideDurationHours = durationMinutes / 60; // Convert minutes to hours
+      console.log(
+        `Using estimated duration: ${rideDurationHours} hours (${durationMinutes} min)`
+      );
     }
 
     await Captain.findByIdAndUpdate(ride.captain._id, {
