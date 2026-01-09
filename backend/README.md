@@ -1008,6 +1008,24 @@ Returned when the token is invalid or expired.
 
 ## Rides API
 
+### Ride Status Flow
+
+```
+pending → accepted → ongoing → completed
+    ↓         ↓
+cancelled  cancelled
+```
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Ride created, waiting for captain to accept |
+| `accepted` | Captain accepted the ride, heading to pickup |
+| `ongoing` | Ride in progress (OTP verified) |
+| `completed` | Ride finished successfully |
+| `cancelled` | Ride cancelled by captain or user |
+
+---
+
 ### Create Ride
 
 **Endpoint:** `POST /rides/create`
@@ -1123,11 +1141,15 @@ Returned when ride creation fails (e.g., location not found).
 
 #### Validation Rules
 
-| Field         | Rule                                                | Error Message                 |
-| ------------- | --------------------------------------------------- | ----------------------------- |
-| `pickup`      | Must be a string, minimum 3 characters              | "Pickup location is required" |
-| `destination` | Must be a string, minimum 3 characters              | "Destination is required"     |
-| `vehicleType` | Must be one of: `car`, `autorickshaw`, `motorcycle` | "Invalid vehicle type"        |
+| Field                  | Rule                                                | Error Message                   |
+| ---------------------- | --------------------------------------------------- | ------------------------------- |
+| `pickup`               | Must be a string, minimum 3 characters              | "Pickup location is required"   |
+| `destination`          | Must be a string, minimum 3 characters              | "Destination is required"       |
+| `vehicleType`          | Must be one of: `car`, `autorickshaw`, `motorcycle` | "Invalid vehicle type"          |
+| `pickupCoords.lat`     | Must be a float between -90 and 90                  | "Invalid pickup latitude"       |
+| `pickupCoords.lng`     | Must be a float between -180 and 180                | "Invalid pickup longitude"      |
+| `destinationCoords.lat`| Must be a float between -90 and 90                  | "Invalid destination latitude"  |
+| `destinationCoords.lng`| Must be a float between -180 and 180                | "Invalid destination longitude" |
 
 ---
 
@@ -1155,3 +1177,862 @@ The fare is calculated based on distance and estimated travel time:
 - A 6-digit OTP is generated using cryptographically secure random number generation
 - The OTP is required for the captain to start the ride (ride verification)
 - The OTP field is excluded from queries by default (`select: false`) but included in the create response
+- The ride is broadcast to all active captains via WebSocket
+
+---
+
+### Accept Ride
+
+**Endpoint:** `POST /rides/accept`
+
+**Description:** Allows a captain to accept a pending ride request. Updates the ride status to "accepted" and notifies the user via WebSocket.
+
+**Authentication:** Required (Captain Bearer token)
+
+---
+
+#### Headers
+
+| Header          | Type   | Required | Description                           |
+| --------------- | ------ | -------- | ------------------------------------- |
+| `Authorization` | String | Yes\*    | Bearer token (e.g., `Bearer <token>`) |
+
+\*Token can also be sent via cookies.
+
+---
+
+#### Request Body
+
+| Field    | Type   | Required | Description            |
+| -------- | ------ | -------- | ---------------------- |
+| `rideId` | String | Yes      | MongoDB ObjectId of the ride |
+
+#### Example Request
+
+```json
+{
+  "rideId": "64a7b8c9d1e2f3a4b5c6d7e8"
+}
+```
+
+---
+
+#### Responses
+
+##### Success Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "_id": "64a7b8c9d1e2f3a4b5c6d7e8",
+  "user": {
+    "_id": "64a7b8c9d1e2f3a4b5c6d7e9",
+    "fullName": {
+      "firstname": "John",
+      "lastname": "Doe"
+    },
+    "email": "john.doe@example.com"
+  },
+  "captain": {
+    "_id": "64a7b8c9d1e2f3a4b5c6d7f0",
+    "fullName": {
+      "firstname": "James",
+      "lastname": "Smith"
+    },
+    "vehicle": {
+      "color": "Black",
+      "plate": "ABC-1234",
+      "capacity": 4,
+      "vehicleType": "car"
+    }
+  },
+  "pickup": "Bandra, Mumbai",
+  "destination": "Panvel, Navi Mumbai",
+  "pickupCoords": {
+    "lat": 19.0544,
+    "lng": 72.8402
+  },
+  "destinationCoords": {
+    "lat": 19.0176,
+    "lng": 72.8562
+  },
+  "fare": 270,
+  "status": "accepted",
+  "distance": "12.5 km",
+  "duration": "35 min"
+}
+```
+
+##### Error Responses
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "errors": [
+    {
+      "msg": "Invalid ride ID",
+      "path": "rideId",
+      "location": "body"
+    }
+  ]
+}
+```
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "error": "Ride is no longer available"
+}
+```
+
+**Status Code:** `404 Not Found`
+
+```json
+{
+  "error": "Ride not found"
+}
+```
+
+---
+
+#### Validation Rules
+
+| Field    | Rule                  | Error Message     |
+| -------- | --------------------- | ----------------- |
+| `rideId` | Must be valid MongoId | "Invalid ride ID" |
+
+---
+
+#### Notes
+
+- Only captains can accept rides
+- The ride must be in `pending` status to be accepted
+- User receives a `ride-accepted` WebSocket event with the ride data (including OTP)
+- The captain response does NOT include the OTP (security measure)
+- Ride status changes from `pending` to `accepted`
+
+---
+
+### Start Ride
+
+**Endpoint:** `POST /rides/start`
+
+**Description:** Allows a captain to start an accepted ride after verifying the OTP from the user. This confirms the user is present and ready for the ride.
+
+**Authentication:** Required (Captain Bearer token)
+
+---
+
+#### Headers
+
+| Header          | Type   | Required | Description                           |
+| --------------- | ------ | -------- | ------------------------------------- |
+| `Authorization` | String | Yes\*    | Bearer token (e.g., `Bearer <token>`) |
+
+\*Token can also be sent via cookies.
+
+---
+
+#### Request Body
+
+| Field    | Type   | Required | Description                           |
+| -------- | ------ | -------- | ------------------------------------- |
+| `rideId` | String | Yes      | MongoDB ObjectId of the ride          |
+| `otp`    | String | Yes      | 6-digit OTP provided by the user      |
+
+#### Example Request
+
+```json
+{
+  "rideId": "64a7b8c9d1e2f3a4b5c6d7e8",
+  "otp": "482619"
+}
+```
+
+---
+
+#### Responses
+
+##### Success Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "_id": "64a7b8c9d1e2f3a4b5c6d7e8",
+  "user": {
+    "_id": "64a7b8c9d1e2f3a4b5c6d7e9",
+    "fullName": {
+      "firstname": "John",
+      "lastname": "Doe"
+    }
+  },
+  "captain": {
+    "_id": "64a7b8c9d1e2f3a4b5c6d7f0",
+    "fullName": {
+      "firstname": "James",
+      "lastname": "Smith"
+    }
+  },
+  "pickup": "Bandra, Mumbai",
+  "destination": "Panvel, Navi Mumbai",
+  "fare": 270,
+  "status": "ongoing",
+  "otp": "482619"
+}
+```
+
+##### Error Responses
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "error": "Invalid OTP"
+}
+```
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "error": "Ride is not in accepted state"
+}
+```
+
+**Status Code:** `404 Not Found`
+
+```json
+{
+  "error": "Ride not found"
+}
+```
+
+---
+
+#### Validation Rules
+
+| Field    | Rule                           | Error Message     |
+| -------- | ------------------------------ | ----------------- |
+| `rideId` | Must be valid MongoId          | "Invalid ride ID" |
+| `otp`    | Must be exactly 6 characters   | "Invalid OTP"     |
+
+---
+
+#### Notes
+
+- Only the captain who accepted the ride can start it
+- The ride must be in `accepted` status
+- OTP verification ensures the correct user is picked up
+- User receives a `ride-started` WebSocket event
+- Ride status changes from `accepted` to `ongoing`
+
+---
+
+### End Ride
+
+**Endpoint:** `POST /rides/end`
+
+**Description:** Allows a captain to complete an ongoing ride. Updates captain's statistics (earnings, total rides, distance) and notifies the user.
+
+**Authentication:** Required (Captain Bearer token)
+
+---
+
+#### Headers
+
+| Header          | Type   | Required | Description                           |
+| --------------- | ------ | -------- | ------------------------------------- |
+| `Authorization` | String | Yes\*    | Bearer token (e.g., `Bearer <token>`) |
+
+\*Token can also be sent via cookies.
+
+---
+
+#### Request Body
+
+| Field    | Type   | Required | Description            |
+| -------- | ------ | -------- | ---------------------- |
+| `rideId` | String | Yes      | MongoDB ObjectId of the ride |
+
+#### Example Request
+
+```json
+{
+  "rideId": "64a7b8c9d1e2f3a4b5c6d7e8"
+}
+```
+
+---
+
+#### Responses
+
+##### Success Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "ride": {
+    "_id": "64a7b8c9d1e2f3a4b5c6d7e8",
+    "user": {
+      "_id": "64a7b8c9d1e2f3a4b5c6d7e9",
+      "fullName": {
+        "firstname": "John",
+        "lastname": "Doe"
+      }
+    },
+    "captain": {
+      "_id": "64a7b8c9d1e2f3a4b5c6d7f0",
+      "fullName": {
+        "firstname": "James",
+        "lastname": "Smith"
+      }
+    },
+    "pickup": "Bandra, Mumbai",
+    "destination": "Panvel, Navi Mumbai",
+    "fare": 270,
+    "status": "completed",
+    "distance": "12.5 km",
+    "duration": "35 min"
+  },
+  "captain": {
+    "_id": "64a7b8c9d1e2f3a4b5c6d7f0",
+    "totalEarnings": 270,
+    "totalRides": 1,
+    "totalDistance": 12.5
+  }
+}
+```
+
+##### Error Responses
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "error": "Ride is not ongoing"
+}
+```
+
+**Status Code:** `403 Forbidden`
+
+```json
+{
+  "error": "Unauthorized to end this ride"
+}
+```
+
+**Status Code:** `404 Not Found`
+
+```json
+{
+  "error": "Ride not found"
+}
+```
+
+---
+
+#### Validation Rules
+
+| Field    | Rule                  | Error Message     |
+| -------- | --------------------- | ----------------- |
+| `rideId` | Must be valid MongoId | "Invalid ride ID" |
+
+---
+
+#### Notes
+
+- Only the captain who is assigned to the ride can end it
+- The ride must be in `ongoing` status
+- Captain's statistics are automatically updated:
+  - `totalEarnings` += fare amount
+  - `totalRides` += 1
+  - `totalDistance` += ride distance
+- User receives a `ride-ended` WebSocket event
+- Ride status changes from `ongoing` to `completed`
+
+---
+
+### Cancel Ride
+
+**Endpoint:** `POST /rides/cancel`
+
+**Description:** Allows a captain to cancel an accepted ride. A cancellation fine is deducted from the captain's earnings.
+
+**Authentication:** Required (Captain Bearer token)
+
+---
+
+#### Headers
+
+| Header          | Type   | Required | Description                           |
+| --------------- | ------ | -------- | ------------------------------------- |
+| `Authorization` | String | Yes\*    | Bearer token (e.g., `Bearer <token>`) |
+
+\*Token can also be sent via cookies.
+
+---
+
+#### Request Body
+
+| Field    | Type   | Required | Description            |
+| -------- | ------ | -------- | ---------------------- |
+| `rideId` | String | Yes      | MongoDB ObjectId of the ride |
+
+#### Example Request
+
+```json
+{
+  "rideId": "64a7b8c9d1e2f3a4b5c6d7e8"
+}
+```
+
+---
+
+#### Responses
+
+##### Success Response
+
+**Status Code:** `200 OK`
+
+```json
+{
+  "message": "Ride cancelled successfully",
+  "fine": 20,
+  "captain": {
+    "_id": "64a7b8c9d1e2f3a4b5c6d7f0",
+    "totalEarnings": 250,
+    "totalRides": 5
+  }
+}
+```
+
+##### Error Responses
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "error": "Ride cannot be cancelled at this stage"
+}
+```
+
+**Status Code:** `403 Forbidden`
+
+```json
+{
+  "error": "Unauthorized to cancel this ride"
+}
+```
+
+**Status Code:** `404 Not Found`
+
+```json
+{
+  "error": "Ride not found"
+}
+```
+
+---
+
+#### Validation Rules
+
+| Field    | Rule                  | Error Message     |
+| -------- | --------------------- | ----------------- |
+| `rideId` | Must be valid MongoId | "Invalid ride ID" |
+
+---
+
+#### Notes
+
+- Only the captain who accepted the ride can cancel it
+- The ride must be in `accepted` status (cannot cancel ongoing rides)
+- A cancellation fine of ₹20 is deducted from the captain's earnings
+- The ride is reset: status becomes `cancelled` and captain is set to `null`
+- User receives a `ride-cancelled` WebSocket event
+- The ride becomes available for other captains again
+
+---
+
+## WebSocket Events
+
+The application uses Socket.IO for real-time communication between users and captains.
+
+### Connection Setup
+
+```javascript
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:3000");
+```
+
+### Client Events (Emit)
+
+#### Join Room
+
+Join a room to receive targeted events.
+
+```javascript
+socket.emit("join", {
+  userId: "64a7b8c9d1e2f3a4b5c6d7e8",
+  userType: "user" // or "captain"
+});
+```
+
+| Field      | Type   | Description                     |
+| ---------- | ------ | ------------------------------- |
+| `userId`   | String | User or Captain MongoDB ID      |
+| `userType` | String | Either `"user"` or `"captain"`  |
+
+---
+
+#### Update Captain Location
+
+Captains send their location updates periodically.
+
+```javascript
+socket.emit("update-location-captain", {
+  userId: "64a7b8c9d1e2f3a4b5c6d7f0",
+  location: {
+    lat: 19.0544,
+    lng: 72.8402
+  }
+});
+```
+
+---
+
+#### Update Location (During Ride)
+
+Send live location updates during an active ride.
+
+```javascript
+socket.emit("update-location", {
+  rideId: "64a7b8c9d1e2f3a4b5c6d7e8",
+  userType: "captain",
+  location: {
+    lat: 19.0544,
+    lng: 72.8402
+  }
+});
+```
+
+---
+
+### Server Events (Listen)
+
+#### new-ride (Captain Only)
+
+Received when a new ride is created.
+
+```javascript
+socket.on("new-ride", (rideData) => {
+  console.log("New ride request:", rideData);
+});
+```
+
+**Payload:**
+```json
+{
+  "_id": "64a7b8c9d1e2f3a4b5c6d7e8",
+  "user": {
+    "_id": "64a7b8c9d1e2f3a4b5c6d7e9",
+    "fullName": {
+      "firstname": "John",
+      "lastname": "Doe"
+    }
+  },
+  "pickup": "Bandra, Mumbai",
+  "destination": "Panvel, Navi Mumbai",
+  "vehicleType": "car",
+  "fare": 270
+}
+```
+
+---
+
+#### ride-accepted (User Only)
+
+Received when a captain accepts the user's ride request.
+
+```javascript
+socket.on("ride-accepted", (rideData) => {
+  console.log("Ride accepted:", rideData);
+  // rideData includes OTP for the user
+});
+```
+
+---
+
+#### ride-started (User Only)
+
+Received when the captain starts the ride (OTP verified).
+
+```javascript
+socket.on("ride-started", (rideData) => {
+  console.log("Ride started:", rideData);
+});
+```
+
+---
+
+#### ride-ended (User Only)
+
+Received when the captain completes the ride.
+
+```javascript
+socket.on("ride-ended", (rideData) => {
+  console.log("Ride completed:", rideData);
+});
+```
+
+---
+
+#### ride-cancelled (User Only)
+
+Received when the captain cancels the ride.
+
+```javascript
+socket.on("ride-cancelled", (data) => {
+  console.log("Ride cancelled:", data.message);
+});
+```
+
+---
+
+#### location-update (Both)
+
+Received during an active ride with the other party's location.
+
+```javascript
+socket.on("location-update", (data) => {
+  const { rideId, userType, location } = data;
+  console.log(`${userType} location:`, location);
+});
+```
+
+---
+
+## Data Models
+
+### User Model
+
+```javascript
+{
+  fullName: {
+    firstname: String (required, min 3 chars),
+    lastname: String (optional, min 3 chars)
+  },
+  email: String (required, unique, valid email),
+  password: String (required, min 6 chars, hashed),
+  socketId: String (optional)
+}
+```
+
+---
+
+### Captain Model
+
+```javascript
+{
+  fullName: {
+    firstname: String (required, min 3 chars),
+    lastname: String (optional, min 3 chars)
+  },
+  email: String (required, unique, valid email),
+  password: String (required, min 6 chars, hashed),
+  socketId: String (optional),
+  status: String (enum: ["active", "inactive"], default: "inactive"),
+  vehicle: {
+    color: String (required, min 3 chars),
+    plate: String (required, min 3 chars),
+    capacity: Number (required, min 1),
+    vehicleType: String (enum: ["car", "motorcycle", "autorickshaw"])
+  },
+  location: {
+    latitude: Number,
+    longitude: Number
+  },
+  totalEarnings: Number (default: 0),
+  totalRides: Number (default: 0),
+  totalDistance: Number (default: 0),
+  hoursOnline: Number (default: 0)
+}
+```
+
+---
+
+### Ride Model
+
+```javascript
+{
+  user: ObjectId (ref: "User", required),
+  captain: ObjectId (ref: "Captain", optional),
+  pickup: String (required),
+  destination: String (required),
+  pickupCoords: {
+    lat: Number,
+    lng: Number
+  },
+  destinationCoords: {
+    lat: Number,
+    lng: Number
+  },
+  fare: Number (required),
+  status: String (enum: ["pending", "accepted", "ongoing", "completed", "cancelled"]),
+  duration: String (formatted as "X min"),
+  distance: String (formatted as "X km"),
+  otp: String (required, select: false),
+  paymentId: String (optional),
+  orderId: String (optional),
+  signature: String (optional)
+}
+```
+
+---
+
+## Environment Variables
+
+Create a `.env` file in the backend root directory:
+
+```env
+# Server Configuration
+PORT=3000
+
+# Database
+MONGODB_URI=mongodb://localhost:27017/uber-clone
+
+# Authentication
+JWT_SECRET=your_super_secret_jwt_key_here
+
+# External APIs
+OPENROUTESERVICE_API_KEY=your_openrouteservice_api_key
+```
+
+### Required Variables
+
+| Variable                  | Description                                | Required |
+| ------------------------- | ------------------------------------------ | -------- |
+| `PORT`                    | Server port number                         | Yes      |
+| `MONGODB_URI`             | MongoDB connection string                  | Yes      |
+| `JWT_SECRET`              | Secret key for JWT signing                 | Yes      |
+| `OPENROUTESERVICE_API_KEY`| API key for OpenRouteService (routing)     | Yes      |
+
+---
+
+## Error Handling
+
+### Standard Error Response Format
+
+```json
+{
+  "error": "Error message here"
+}
+```
+
+### Validation Error Response Format
+
+```json
+{
+  "errors": [
+    {
+      "type": "field",
+      "msg": "Error message",
+      "path": "fieldName",
+      "location": "body"
+    }
+  ]
+}
+```
+
+### HTTP Status Codes
+
+| Code | Description                                    |
+| ---- | ---------------------------------------------- |
+| 200  | Success                                        |
+| 201  | Created                                        |
+| 400  | Bad Request (validation errors)                |
+| 401  | Unauthorized (invalid/missing token)           |
+| 403  | Forbidden (insufficient permissions)           |
+| 404  | Not Found                                      |
+| 500  | Internal Server Error                          |
+
+---
+
+## Running the Server
+
+### Development Mode
+
+```bash
+npm run dev
+```
+
+Uses nodemon for auto-restart on file changes.
+
+### Production Mode
+
+```bash
+npm start
+```
+
+---
+
+## Project Structure
+
+```
+backend/
+├── controllers/           # Request handlers
+│   ├── captain.controller.js
+│   ├── maps.controller.js
+│   ├── ride.controller.js
+│   └── user.controller.js
+├── db/                    # Database configuration
+│   └── db.js
+├── middlewares/           # Custom middlewares
+│   └── auth.middleware.js
+├── models/                # Mongoose schemas
+│   ├── captain.model.js
+│   ├── ride.model.js
+│   └── user.model.js
+├── routes/                # API routes
+│   ├── captain.route.js
+│   ├── maps.route.js
+│   ├── ride.route.js
+│   └── user.route.js
+├── services/              # Business logic
+│   ├── maps.service.js
+│   ├── ride.service.js
+│   └── user.service.js
+├── app.js                 # Express app setup
+├── server.js              # Server entry point
+├── socket.js              # Socket.IO configuration
+├── package.json           # Dependencies
+└── README.md              # This file
+```
+
+---
+
+## Dependencies
+
+| Package           | Version | Purpose                     |
+| ----------------- | ------- | --------------------------- |
+| express           | ^5.2.1  | Web framework               |
+| mongoose          | ^9.0.2  | MongoDB ODM                 |
+| socket.io         | ^4.8.3  | Real-time communication     |
+| jsonwebtoken      | ^9.0.3  | JWT authentication          |
+| bcrypt            | ^6.0.0  | Password hashing            |
+| express-validator | ^7.3.1  | Request validation          |
+| cors              | ^2.8.5  | Cross-origin requests       |
+| cookie-parser     | ^1.4.7  | Cookie parsing              |
+| dotenv            | ^17.2.3 | Environment variables       |
+| axios             | ^1.6.0  | HTTP client (for APIs)      |
+
+---
+
+## License
+
+This project is licensed under the MIT License.
