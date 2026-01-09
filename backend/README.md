@@ -1016,13 +1016,13 @@ pending → accepted → ongoing → completed
 cancelled  cancelled
 ```
 
-| Status | Description |
-|--------|-------------|
-| `pending` | Ride created, waiting for captain to accept |
-| `accepted` | Captain accepted the ride, heading to pickup |
-| `ongoing` | Ride in progress (OTP verified) |
-| `completed` | Ride finished successfully |
-| `cancelled` | Ride cancelled by captain or user |
+| Status      | Description                                  |
+| ----------- | -------------------------------------------- |
+| `pending`   | Ride created, waiting for captain to accept  |
+| `accepted`  | Captain accepted the ride, heading to pickup |
+| `ongoing`   | Ride in progress (OTP verified)              |
+| `completed` | Ride finished successfully                   |
+| `cancelled` | Ride cancelled by captain or user            |
 
 ---
 
@@ -1141,15 +1141,15 @@ Returned when ride creation fails (e.g., location not found).
 
 #### Validation Rules
 
-| Field                  | Rule                                                | Error Message                   |
-| ---------------------- | --------------------------------------------------- | ------------------------------- |
-| `pickup`               | Must be a string, minimum 3 characters              | "Pickup location is required"   |
-| `destination`          | Must be a string, minimum 3 characters              | "Destination is required"       |
-| `vehicleType`          | Must be one of: `car`, `autorickshaw`, `motorcycle` | "Invalid vehicle type"          |
-| `pickupCoords.lat`     | Must be a float between -90 and 90                  | "Invalid pickup latitude"       |
-| `pickupCoords.lng`     | Must be a float between -180 and 180                | "Invalid pickup longitude"      |
-| `destinationCoords.lat`| Must be a float between -90 and 90                  | "Invalid destination latitude"  |
-| `destinationCoords.lng`| Must be a float between -180 and 180                | "Invalid destination longitude" |
+| Field                   | Rule                                                | Error Message                   |
+| ----------------------- | --------------------------------------------------- | ------------------------------- |
+| `pickup`                | Must be a string, minimum 3 characters              | "Pickup location is required"   |
+| `destination`           | Must be a string, minimum 3 characters              | "Destination is required"       |
+| `vehicleType`           | Must be one of: `car`, `autorickshaw`, `motorcycle` | "Invalid vehicle type"          |
+| `pickupCoords.lat`      | Must be a float between -90 and 90                  | "Invalid pickup latitude"       |
+| `pickupCoords.lng`      | Must be a float between -180 and 180                | "Invalid pickup longitude"      |
+| `destinationCoords.lat` | Must be a float between -90 and 90                  | "Invalid destination latitude"  |
+| `destinationCoords.lng` | Must be a float between -180 and 180                | "Invalid destination longitude" |
 
 ---
 
@@ -1203,8 +1203,8 @@ The fare is calculated based on distance and estimated travel time:
 
 #### Request Body
 
-| Field    | Type   | Required | Description            |
-| -------- | ------ | -------- | ---------------------- |
+| Field    | Type   | Required | Description                  |
+| -------- | ------ | -------- | ---------------------------- |
 | `rideId` | String | Yes      | MongoDB ObjectId of the ride |
 
 #### Example Request
@@ -1338,10 +1338,10 @@ The fare is calculated based on distance and estimated travel time:
 
 #### Request Body
 
-| Field    | Type   | Required | Description                           |
-| -------- | ------ | -------- | ------------------------------------- |
-| `rideId` | String | Yes      | MongoDB ObjectId of the ride          |
-| `otp`    | String | Yes      | 6-digit OTP provided by the user      |
+| Field    | Type   | Required | Description                      |
+| -------- | ------ | -------- | -------------------------------- |
+| `rideId` | String | Yes      | MongoDB ObjectId of the ride     |
+| `otp`    | String | Yes      | 6-digit OTP provided by the user |
 
 #### Example Request
 
@@ -1415,10 +1415,10 @@ The fare is calculated based on distance and estimated travel time:
 
 #### Validation Rules
 
-| Field    | Rule                           | Error Message     |
-| -------- | ------------------------------ | ----------------- |
-| `rideId` | Must be valid MongoId          | "Invalid ride ID" |
-| `otp`    | Must be exactly 6 characters   | "Invalid OTP"     |
+| Field    | Rule                         | Error Message     |
+| -------- | ---------------------------- | ----------------- |
+| `rideId` | Must be valid MongoId        | "Invalid ride ID" |
+| `otp`    | Must be exactly 6 characters | "Invalid OTP"     |
 
 ---
 
@@ -1454,8 +1454,8 @@ The fare is calculated based on distance and estimated travel time:
 
 #### Request Body
 
-| Field    | Type   | Required | Description            |
-| -------- | ------ | -------- | ---------------------- |
+| Field    | Type   | Required | Description                  |
+| -------- | ------ | -------- | ---------------------------- |
 | `rideId` | String | Yes      | MongoDB ObjectId of the ride |
 
 #### Example Request
@@ -1579,8 +1579,8 @@ The fare is calculated based on distance and estimated travel time:
 
 #### Request Body
 
-| Field    | Type   | Required | Description            |
-| -------- | ------ | -------- | ---------------------- |
+| Field    | Type   | Required | Description                  |
+| -------- | ------ | -------- | ---------------------------- |
 | `rideId` | String | Yes      | MongoDB ObjectId of the ride |
 
 #### Example Request
@@ -1679,14 +1679,14 @@ Join a room to receive targeted events.
 ```javascript
 socket.emit("join", {
   userId: "64a7b8c9d1e2f3a4b5c6d7e8",
-  userType: "user" // or "captain"
+  userType: "user", // or "captain"
 });
 ```
 
-| Field      | Type   | Description                     |
-| ---------- | ------ | ------------------------------- |
-| `userId`   | String | User or Captain MongoDB ID      |
-| `userType` | String | Either `"user"` or `"captain"`  |
+| Field      | Type   | Description                    |
+| ---------- | ------ | ------------------------------ |
+| `userId`   | String | User or Captain MongoDB ID     |
+| `userType` | String | Either `"user"` or `"captain"` |
 
 ---
 
@@ -1699,8 +1699,8 @@ socket.emit("update-location-captain", {
   userId: "64a7b8c9d1e2f3a4b5c6d7f0",
   location: {
     lat: 19.0544,
-    lng: 72.8402
-  }
+    lng: 72.8402,
+  },
 });
 ```
 
@@ -1716,8 +1716,8 @@ socket.emit("update-location", {
   userType: "captain",
   location: {
     lat: 19.0544,
-    lng: 72.8402
-  }
+    lng: 72.8402,
+  },
 });
 ```
 
@@ -1736,6 +1736,7 @@ socket.on("new-ride", (rideData) => {
 ```
 
 **Payload:**
+
 ```json
 {
   "_id": "64a7b8c9d1e2f3a4b5c6d7e8",
@@ -1915,12 +1916,12 @@ OPENROUTESERVICE_API_KEY=your_openrouteservice_api_key
 
 ### Required Variables
 
-| Variable                  | Description                                | Required |
-| ------------------------- | ------------------------------------------ | -------- |
-| `PORT`                    | Server port number                         | Yes      |
-| `MONGODB_URI`             | MongoDB connection string                  | Yes      |
-| `JWT_SECRET`              | Secret key for JWT signing                 | Yes      |
-| `OPENROUTESERVICE_API_KEY`| API key for OpenRouteService (routing)     | Yes      |
+| Variable                   | Description                            | Required |
+| -------------------------- | -------------------------------------- | -------- |
+| `PORT`                     | Server port number                     | Yes      |
+| `MONGODB_URI`              | MongoDB connection string              | Yes      |
+| `JWT_SECRET`               | Secret key for JWT signing             | Yes      |
+| `OPENROUTESERVICE_API_KEY` | API key for OpenRouteService (routing) | Yes      |
 
 ---
 
@@ -1951,15 +1952,15 @@ OPENROUTESERVICE_API_KEY=your_openrouteservice_api_key
 
 ### HTTP Status Codes
 
-| Code | Description                                    |
-| ---- | ---------------------------------------------- |
-| 200  | Success                                        |
-| 201  | Created                                        |
-| 400  | Bad Request (validation errors)                |
-| 401  | Unauthorized (invalid/missing token)           |
-| 403  | Forbidden (insufficient permissions)           |
-| 404  | Not Found                                      |
-| 500  | Internal Server Error                          |
+| Code | Description                          |
+| ---- | ------------------------------------ |
+| 200  | Success                              |
+| 201  | Created                              |
+| 400  | Bad Request (validation errors)      |
+| 401  | Unauthorized (invalid/missing token) |
+| 403  | Forbidden (insufficient permissions) |
+| 404  | Not Found                            |
+| 500  | Internal Server Error                |
 
 ---
 
@@ -2018,18 +2019,18 @@ backend/
 
 ## Dependencies
 
-| Package           | Version | Purpose                     |
-| ----------------- | ------- | --------------------------- |
-| express           | ^5.2.1  | Web framework               |
-| mongoose          | ^9.0.2  | MongoDB ODM                 |
-| socket.io         | ^4.8.3  | Real-time communication     |
-| jsonwebtoken      | ^9.0.3  | JWT authentication          |
-| bcrypt            | ^6.0.0  | Password hashing            |
-| express-validator | ^7.3.1  | Request validation          |
-| cors              | ^2.8.5  | Cross-origin requests       |
-| cookie-parser     | ^1.4.7  | Cookie parsing              |
-| dotenv            | ^17.2.3 | Environment variables       |
-| axios             | ^1.6.0  | HTTP client (for APIs)      |
+| Package           | Version | Purpose                 |
+| ----------------- | ------- | ----------------------- |
+| express           | ^5.2.1  | Web framework           |
+| mongoose          | ^9.0.2  | MongoDB ODM             |
+| socket.io         | ^4.8.3  | Real-time communication |
+| jsonwebtoken      | ^9.0.3  | JWT authentication      |
+| bcrypt            | ^6.0.0  | Password hashing        |
+| express-validator | ^7.3.1  | Request validation      |
+| cors              | ^2.8.5  | Cross-origin requests   |
+| cookie-parser     | ^1.4.7  | Cookie parsing          |
+| dotenv            | ^17.2.3 | Environment variables   |
+| axios             | ^1.6.0  | HTTP client (for APIs)  |
 
 ---
 
