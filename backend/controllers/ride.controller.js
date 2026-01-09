@@ -110,8 +110,9 @@ const startRideController = async (req, res) => {
       return res.status(400).json({ error: "Invalid OTP" });
     }
 
-    // Update ride status to ongoing
+    // Update ride status to ongoing and set start time
     ride.status = "ongoing";
+    ride.startedAt = new Date();
     await ride.save();
 
     // Notify user that ride has started
@@ -154,8 +155,9 @@ const endRideController = async (req, res) => {
       return res.status(403).json({ error: "Unauthorized to end this ride" });
     }
 
-    // Update ride status to completed
+    // Update ride status to completed and set completion time
     ride.status = "completed";
+    ride.completedAt = new Date();
     await ride.save();
 
     // Update captain's statistics
@@ -164,11 +166,21 @@ const endRideController = async (req, res) => {
     const distanceStr = ride.distance || "0";
     const distanceAmount = parseFloat(distanceStr.replace(/[^0-9.]/g, "")) || 0;
 
+    // Calculate actual ride duration in hours
+    let rideDurationHours = 0;
+    if (ride.startedAt) {
+      const startTime = new Date(ride.startedAt);
+      const endTime = new Date(ride.completedAt);
+      const durationMs = endTime - startTime;
+      rideDurationHours = durationMs / (1000 * 60 * 60); // Convert ms to hours
+    }
+
     await Captain.findByIdAndUpdate(ride.captain._id, {
       $inc: {
         totalEarnings: fareAmount,
         totalRides: 1,
         totalDistance: distanceAmount,
+        hoursOnline: rideDurationHours,
       },
     });
 

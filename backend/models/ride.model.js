@@ -56,6 +56,12 @@ const rideSchema = new mongoose.Schema(
       select: false,
       required: true,
     },
+    startedAt: {
+      type: Date, // Timestamp when ride actually started (OTP verified)
+    },
+    completedAt: {
+      type: Date, // Timestamp when ride was completed
+    },
   },
   { timestamps: true }
 );
