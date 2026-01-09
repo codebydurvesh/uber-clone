@@ -6,7 +6,7 @@ import {
   logoutCaptain,
   captainProfile,
 } from "../controllers/captain.controller.js";
-import { VerifyJWT } from "../middlewares/auth.middleware.js";
+import { VerifyCaptainJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -51,7 +51,7 @@ router.post(
   loginCaptain
 );
 
-router.get("/logout", VerifyJWT, logoutCaptain);
-router.get("/profile", VerifyJWT, captainProfile);
+router.get("/logout", VerifyCaptainJWT, logoutCaptain);
+router.get("/profile", VerifyCaptainJWT, captainProfile);
 
 export { router };

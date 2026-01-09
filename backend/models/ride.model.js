@@ -19,6 +19,14 @@ const rideSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    pickupCoords: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
+    destinationCoords: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
     fare: {
       type: Number,
       required: true,
@@ -29,10 +37,10 @@ const rideSchema = new mongoose.Schema(
       default: "pending",
     },
     duration: {
-      type: Number, // in seconds
+      type: String, // formatted as "X min"
     },
     distance: {
-      type: Number, // in meters
+      type: String, // formatted as "X km"
     },
     paymentId: {
       type: String,

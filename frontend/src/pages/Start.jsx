@@ -1,7 +1,25 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Start = () => {
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    const userToken = localStorage.getItem("token");
+    const captainToken = localStorage.getItem("captain-token");
+
+    if (captainToken) {
+      // Captain is logged in, redirect to captain home
+      navigate("/captain-home");
+    } else if (userToken) {
+      // User is logged in, redirect to user home
+      navigate("/home");
+    } else {
+      // No one is logged in, go to login page
+      navigate("/login");
+    }
+  };
+
   return (
     <>
       <div className="bg-cover  bg-center bg-[url(https://images.unsplash.com/photo-1624724126923-e2c021df1311?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)] h-screen pt-5  w-full flex justify-between flex-col w-full">
@@ -12,13 +30,12 @@ const Start = () => {
         />
         <div className="bg-white pb-7 py-4 px-4">
           <h2 className="text-3xl font-bold">Get Started with Uber</h2>
-          <Link
-            to="/login"
-            className="flex items-center justify-center w-full bg-black text-white py-3 rounded mt-5
-          "
+          <button
+            onClick={handleGetStarted}
+            className="flex items-center justify-center w-full bg-black text-white py-3 rounded mt-5"
           >
             Continue
-          </Link>
+          </button>
         </div>
       </div>
     </>

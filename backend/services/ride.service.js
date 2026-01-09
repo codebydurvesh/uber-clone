@@ -2,22 +2,11 @@ import { Ride } from "../models/ride.model.js";
 import { getDistanceAndTime, getCoordinates } from "./maps.service.js";
 import crypto from "crypto";
 
-async function getFare(pickup, destination) {
-  if (!pickup || !destination) {
+async function getFare(pickupCoords, destinationCoords) {
+  if (!pickupCoords || !destinationCoords) {
     throw new Error(
       "Pickup and destination coordinates are required to calculate fare."
     );
-  }
-
-  // Convert to coordinates if strings are passed
-  let pickupCoords = pickup;
-  let destinationCoords = destination;
-
-  if (typeof pickup === "string") {
-    pickupCoords = await getCoordinates(pickup);
-  }
-  if (typeof destination === "string") {
-    destinationCoords = await getCoordinates(destination);
   }
 
   const distanceTime = await getDistanceAndTime(
@@ -75,19 +64,48 @@ function getOtp(num) {
   }
   return generateOtp();
 }
-const createRide = async (userId, pickup, destination, vehicleType) => {
-  if (!userId || !pickup || !destination || !vehicleType) {
+const createRide = async (
+  userId,
+  pickup,
+  destination,
+  vehicleType,
+  pickupCoords,
+  destinationCoords
+) => {
+  if (
+    !userId ||
+    !pickup ||
+    !destination ||
+    !vehicleType ||
+    !pickupCoords ||
+    !destinationCoords
+  ) {
     throw new Error("All parameters are required to create a ride.");
   }
 
-  const fare = await getFare(pickup, destination);
+  // Get distance and time for the ride
+  const distanceTime = await getDistanceAndTime(
+    pickupCoords,
+    destinationCoords
+  );
+  const fare = await getFare(pickupCoords, destinationCoords);
 
   const ride = new Ride({
     user: userId,
     pickup,
     destination,
+    pickupCoords: {
+      lat: pickupCoords.lat,
+      lng: pickupCoords.lng,
+    },
+    destinationCoords: {
+      lat: destinationCoords.lat,
+      lng: destinationCoords.lng,
+    },
     vehicleType,
     fare: fare[vehicleType],
+    distance: `${distanceTime.distance.toFixed(1)} km`,
+    duration: `${Math.ceil(distanceTime.duration)} min`,
     otp: getOtp(6),
   });
 
