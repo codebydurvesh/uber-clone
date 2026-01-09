@@ -310,17 +310,6 @@ cd frontend
 npm test
 ```
 
-## 🚧 Roadmap
-
-- [ ] Payment integration (Stripe/Razorpay)
-- [ ] Push notifications
-- [ ] Ride history and receipts
-- [ ] Rating system for riders and captains
-- [ ] Admin dashboard
-- [ ] Multiple payment methods
-- [ ] Ride scheduling
-- [ ] Promo codes and discounts
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
